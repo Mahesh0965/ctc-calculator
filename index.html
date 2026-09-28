@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CTC to In-hand Salary Calculator (India)</title>
+<style>
+:root{--bg:#eef2f1;--panel:#fff;--ink:#14232b;--mute:#5d6f76;--line:#c9d3d0;--teal:#0f6b5c;--amber:#e0a100;--red:#b3402f;--tint:#e3ece9}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a1e;--panel:#172429;--ink:#e6efed;--mute:#93a6ab;--line:#2c3e44;--teal:#3fc0a6;--amber:#f0b429;--red:#f07a67;--tint:#1e3138}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "IBM Plex Sans","Segoe UI",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+main{max-width:1040px;margin:0 auto;padding:28px 16px 48px}
+h1{font-size:1.6rem;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--mute);margin:0 0 24px;max-width:60ch}
+.grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:20px}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:20px}
+label{display:block;font-size:.9rem;color:var(--mute);margin:14px 0 4px}
+label:first-child{margin-top:0}
+input,select{width:100%;padding:9px 10px;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:4px}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--teal);outline-offset:1px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.seg{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.seg button{flex:1;padding:9px;border:0;background:var(--bg);color:var(--ink);font:inherit;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--teal);color:#fff}
+.hero{border-left:6px solid var(--teal)}
+.big{font-size:2.8rem;font-weight:600;line-height:1.1;letter-spacing:-.02em;margin:4px 0}
+.mute{color:var(--mute);font-size:.9rem}
+.bar{display:flex;height:14px;border-radius:3px;overflow:hidden;margin:16px 0 8px;background:var(--tint)}
+.bar span{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.85rem;color:var(--mute)}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:2px}
+table{width:100%;border-collapse:collapse;margin-top:8px}
+th,td{padding:8px 0;border-bottom:1px solid var(--line);text-align:right;font-weight:400}
+th:first-child,td:first-child{text-align:left}
+thead th{color:var(--mute);font-size:.85rem}
+tr.total td{font-weight:600;border-bottom:2px solid var(--ink)}
+tr.neg td:not(:first-child){color:var(--red)}
+.note{background:var(--tint);border-radius:4px;padding:10px 12px;margin-top:14px;font-size:.9rem}
+.warn{color:var(--red)}
+h2{font-size:1.05rem;margin:22px 0 0}
+h2:first-child{margin-top:0}
+footer{margin-top:20px;color:var(--mute);font-size:.82rem;max-width:80ch}
+</style>
+</head>
+<body>
+<main>
+<h1>CTC to in-hand salary calculator</h1>
+<p class="sub">See your monthly take-home from an annual CTC, with tax worked out under both the new and old regimes (FY 2026-27).</p>
+
+<div class="grid">
+<section class="panel" aria-label="Inputs">
+  <label for="ctc">Annual CTC (₹)</label>
+  <input id="ctc" type="number" min="0" step="10000" value="1200000">
+  <div class="row">
+    <div><label for="var">Variable pay in CTC (₹/yr)</label><input id="var" type="number" min="0" step="5000" value="0"></div>
+    <div><label for="basic">Basic (% of CTC)</label><input id="basic" type="number" min="10" max="80" value="40"></div>
+  </div>
+  <div class="row">
+    <div><label for="hra">HRA (% of basic)</label><input id="hra" type="number" min="0" max="100" value="50"></div>
+    <div><label for="pf">Provident fund</label>
+      <select id="pf"><option value="15000">12% of basic, ceiling ₹15,000</option><option value="25000">12% of basic, ceiling ₹25,000</option><option value="full">12% of full basic (no ceiling)</option></select></div>
+  </div>
+  <h2>Old regime details</h2>
+  <div class="row">
+    <div><label for="rent">Rent paid (₹/month)</label><input id="rent" type="number" min="0" step="1000" value="0"></div>
+    <div><label for="metro">City</label>
+      <select id="metro"><option value="0.5">Metro (Mumbai, Delhi, Kolkata, Chennai)</option><option value="0.4">Non-metro</option></select></div>
+  </div>
+  <div class="row">
+    <div><label for="inv">Other 80C investments (₹/yr)</label><input id="inv" type="number" min="0" step="5000" value="0"></div>
+    <div><label for="h80d">Health insurance 80D (₹/yr)</label><input id="h80d" type="number" min="0" step="1000" value="0"></div>
+  </div>
+  <label for="pt">Professional tax (₹/yr)</label>
+  <input id="pt" type="number" min="0" step="100" value="2500">
+  <label>Show results for</label>
+  <div class="seg" id="regime">
+    <button type="button" data-r="new" aria-pressed="true">New regime</button>
+    <button type="button" data-r="old" aria-pressed="false">Old regime</button>
+  </div>
+</section>
+
+<section class="panel hero" aria-live="polite">
+  <div class="mute">Monthly in-hand (average)</div>
+  <div class="big" id="monthly">–</div>
+  <div class="mute" id="yearly"></div>
+  <div class="bar" id="bar"></div>
+  <div class="legend" id="legend"></div>
+
+  <table>
+    <thead><tr><th>Component</th><th>Monthly</th><th>Yearly</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <div class="note" id="note"></div>
+  <div class="warn" id="err" style="margin-top:10px"></div>
+</section>
+</div>
+
+<footer>Estimate only, not tax advice. Assumes salaried resident individual under 60, gratuity at 4.81% of basic, standard deduction ₹75,000 (new) / ₹50,000 (old), 4% cess, and surcharge without marginal relief. Employer contributions to PF above statutory limits and other perquisites are not modelled. Check your payslip and a tax professional for exact figures.</footer>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const inr = n => "₹" + Math.round(n).toLocaleString("en-IN");
+let regime = "new";
+
+function slabTax(t, slabs){
+  let tax = 0, prev = 0;
+  for (const [limit, rate] of slabs){
+    if (t > prev) tax += (Math.min(t, limit) - prev) * rate;
+    prev = limit;
+  }
+  return tax;
+}
+const NEW = [[400000,0],[800000,.05],[1200000,.10],[1600000,.15],[2000000,.20],[2400000,.25],[Infinity,.30]];
+const OLD = [[250000,0],[500000,.05],[1000000,.20],[Infinity,.30]];
+
+function surchargeRate(t, isNew){
+  if (t > 50000000 && !isNew) return .37;
+  if (t > 20000000) return .25;
+  if (t > 10000000) return .15;
+  if (t > 5000000) return .10;
+  return 0;
+}
+function finishTax(base, t, isNew){
+  if (isNew && t <= 1200000) base = 0;
+  else if (isNew) base = Math.min(base, t - 1200000);   // marginal relief
+  if (!isNew && t <= 500000) base = 0;
+  base *= 1 + surchargeRate(t, isNew);
+  return base * 1.04;
+}
+
+function compute(){
+  const v = id => Math.max(0, parseFloat($(id).value) || 0);
+  const ctc = v("ctc"), variable = Math.min(v("var"), ctc);
+  const basic = ctc * v("basic") / 100;
+  const hra = basic * v("hra") / 100;
+  const pfSel = $("pf").value;
+  const pfBase = pfSel === "full" ? basic : Math.min(basic, +pfSel * 12);
+  const pf = pfBase * 0.12;
+  const gratuity = basic * 0.0481;
+  const gross = ctc - pf - gratuity;               // taxable salary incl. variable
+  const fixedGross = gross - variable;
+  const special = fixedGross - basic - hra;
+  const pt = v("pt");
+
+  const newTaxable = Math.max(0, gross - 75000 - pt * 0);
+  const hraExempt = Math.max(0, Math.min(hra, v("rent") * 12 - 0.1 * basic, +$("metro").value * basic));
+  const ded80c = Math.min(150000, pf + v("inv"));
+  const oldTaxable = Math.max(0, gross - 50000 - pt - hraExempt - ded80c - Math.min(v("h80d"), 100000));
+
+  const taxNew = finishTax(slabTax(newTaxable, NEW), newTaxable, true);
+  const taxOld = finishTax(slabTax(oldTaxable, OLD), oldTaxable, false);
+  return {ctc, variable, basic, hra, special, fixedGross, pf, gratuity, gross, pt, taxNew, taxOld, newTaxable, oldTaxable, hraExempt};
+}
+
+function render(){
+  const d = compute();
+  const tax = regime === "new" ? d.taxNew : d.taxOld;
+  const other = regime === "new" ? d.taxOld : d.taxNew;
+  const net = d.gross - d.pf - d.pt - tax;
+
+  $("monthly").textContent = inr(net / 12);
+  $("yearly").textContent = inr(net) + " a year after PF, professional tax and income tax";
+  $("err").textContent = d.special < 0 ? "Basic and HRA exceed your fixed pay. Lower the basic %, HRA % or variable pay." : "";
+
+  const parts = [["In-hand", net, "var(--teal)"], ["Income tax", tax, "var(--red)"], ["PF + prof. tax", d.pf + d.pt, "var(--amber)"], ["Gratuity + employer PF", d.gratuity + d.pf, "var(--mute)"]];
+  const total = d.ctc || 1;
+  $("bar").innerHTML = parts.map(p => `<span title="${p[0]}" style="width:${Math.max(0, p[1]) / total * 100}%;background:${p[2]}"></span>`).join("");
+  $("legend").innerHTML = parts.map(p => `<span><i style="background:${p[2]}"></i>${p[0]} ${(Math.max(0, p[1]) / total * 100).toFixed(0)}%</span>`).join("");
+
+  const r = (name, y, cls = "") => `<tr class="${cls}"><td>${name}</td><td>${inr(y / 12)}</td><td>${inr(y)}</td></tr>`;
+  $("rows").innerHTML =
+    r("Basic", d.basic) + r("HRA", d.hra) + r("Special allowance", Math.max(0, d.special)) +
+    (d.variable ? r("Variable pay", d.variable) : "") +
+    r("Gross salary", d.gross, "total") +
+    r("Employee PF", d.pf, "neg") + r("Professional tax", d.pt, "neg") + r("Income tax", tax, "neg") +
+    r("Net in-hand", net, "total") +
+    r("Employer PF (in CTC)", d.pf) + r("Gratuity (in CTC)", d.gratuity);
+
+  const diff = Math.abs(other - tax);
+  const better = d.taxNew <= d.taxOld ? "new" : "old";
+  $("note").innerHTML = `Taxable income: <b>${inr(regime === "new" ? d.newTaxable : d.oldTaxable)}</b>. ` +
+    (diff < 1 ? "Both regimes give the same tax." :
+     `The <b>${better}</b> regime saves you <b>${inr(diff)}</b> a year (${inr(diff / 12)} a month).`) +
+    (d.variable ? " Monthly figure averages variable pay over 12 months." : "");
+}
+
+document.querySelectorAll("input,select").forEach(el => el.addEventListener("input", render));
+document.querySelectorAll("#regime button").forEach(b => b.addEventListener("click", () => {
+  regime = b.dataset.r;
+  document.querySelectorAll("#regime button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  render();
+}));
+render();
+</script>
+</body>
+</html>
